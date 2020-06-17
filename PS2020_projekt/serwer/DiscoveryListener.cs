@@ -29,9 +29,13 @@ namespace serwer
 
 
 
-        public DiscoveryListener()
+        public DiscoveryListener(string ip, int port)
         {
-            offer = "OFFER 127.0.0.1 4562";
+            this.offer = String.Format("OFFER {0} {1}", ip, port);
+        }
+        public DiscoveryListener(string address)
+        {
+            this.offer = String.Format("OFFER {0} {1}", address.Split(':')[0], address.Split(':')[1]);
         }
         public void Run()
         {

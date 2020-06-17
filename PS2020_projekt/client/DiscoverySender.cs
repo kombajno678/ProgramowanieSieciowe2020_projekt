@@ -19,13 +19,13 @@ namespace client
         private Thread threadListener;
         private Thread threadSender;
 
-        UdpClient clientListener;
-        IPEndPoint localEpListener;
+        private UdpClient clientListener;
+        private IPEndPoint localEpListener;
 
-        UdpClient udpclientSender;
-        IPEndPoint remoteepSender;
+        private UdpClient udpclientSender;
+        private IPEndPoint remoteepSender;
 
-        List<string> offers;
+        private List<string> offers;
 
         public DiscoverySender()
         {
@@ -52,12 +52,24 @@ namespace client
                 }
             });
             threadSender = new Thread(() => {
-                while (loopFlag)
+                try
                 {
-                    SendLoop();
-                    //sleep for 10s
-                    Thread.Sleep(10 * 1000);
+                    while (loopFlag)
+                    {
+                        SendLoop();
+                        //sleep for 10s
+                        Thread.Sleep(10 * 1000);
+                    }
+                }catch(ThreadAbortException e)
+                {
+                    //brr
                 }
+                catch (ThreadInterruptedException e)
+                {
+                    //brr
+                }
+
+
             });
 
             threadListener.Start();
@@ -124,7 +136,7 @@ namespace client
                 Console.WriteLine("error: cant join multicast group");
                 return;
             }
-            Console.WriteLine("UdpMulticastListener> now waiting for incoming messages...");
+            //Console.WriteLine("UdpMulticastListener> now waiting for incoming messages...");
         }
         private void ListenLoop()
         {
@@ -132,11 +144,14 @@ namespace client
             string strData = Encoding.Unicode.GetString(data);
             if (strData.Split(' ')[0].Equals("OFFER"))
             {
-                Console.WriteLine("UdpListener> '" + strData + "', from: " + localEpListener.ToString());
+                //Console.WriteLine(" '" + strData + "', from: " + localEpListener.ToString());
 
                 string offer = strData.Split(' ')[1] + ":" + strData.Split(' ')[2];
-                
-                offers.Add(offer);
+
+                if (!offers.Contains(offer))
+                {
+                    offers.Add(offer);
+                }
             }
         }
 

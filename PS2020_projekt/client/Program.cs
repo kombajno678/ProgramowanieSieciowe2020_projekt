@@ -20,6 +20,8 @@ namespace client
 
 
             bool offerChosen = false;
+            List<string> offers = null;
+            int index = -1;
             while (!offerChosen)
             {
                 Console.WriteLine("p - print offers");
@@ -29,23 +31,45 @@ namespace client
                 if (choice.Equals("p"))
                 {
                     //print offers
-                    List<string> offers = ds.GetOffers();
-                    for(int i = 0; i < offers.Count(); i++)
+                    offers = ds.GetOffers();
+                    Console.WriteLine("server offers : ");
+                    for (int i = 0; i < offers.Count(); i++)
                     {
-                        Console.WriteLine(String.Format("{0} - {1}\n", i, offers[i]));
+                        Console.WriteLine(String.Format("[{0}] - {1}", i, offers[i]));
                     }
                 }
+                else
+                {
+                    offers = ds.GetOffers();
+                    index = -1;
+                    if(!Int32.TryParse(choice, out index))
+                    {
+                        continue;
+                    }
+                    if(index < 0 ||  (offers != null && index > offers.Count()))
+                    {
+                        continue;
+                    }
+                    Console.WriteLine("offert choosen : " + offers[index]);
+                    break;
+                }
             }
-
-           
-
-            Console.ReadKey();
-            //get responds
-            //every 10 s print them
-            //let user chosoe server
-            //connect to server
+            Console.WriteLine("input delay between requests: [ms]");
+            int delay = Int32.Parse(Console.ReadLine());
+            Console.WriteLine("connecting to time server ...");
+            ds.Stop();
 
 
+
+            string ip = offers[index].Split(':')[0];
+            int port = Int32.Parse(offers[index].Split(':')[1]);
+
+            TimeClient tc = new TimeClient(ip, port, delay);
+            tc.Run();
+
+
+
+            Console.ReadKey(); 
 
     }
 }

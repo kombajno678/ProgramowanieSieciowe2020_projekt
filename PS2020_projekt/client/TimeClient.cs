@@ -4,6 +4,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace client
@@ -19,18 +20,88 @@ namespace client
         public bool verbose = true;
         private int bufferSize = 1024;
 
-        public TimeClient(string ip, int port)
+        private bool loopFlag;
+        private Thread thread;
+
+        private int delay;
+
+        public TimeClient(string ip, int port, int delay)
         {
-            serversAddress = ip;
-            serversPort = port;
+            SetAddress(ip);
+            SetPort(port);
+            this.delay = delay;
         }
 
-        public void SetAddress(string address)
+        public void Run()
+        {
+            loopFlag = true;
+
+            thread = new Thread(()=>
+            {
+                Connect();
+                while (loopFlag)
+                {
+                    //remember time T1[ms]
+                    double T1 = DateTime.Now.TimeOfDay.TotalMilliseconds;
+
+                    //ask server for its time
+                    try
+                    {
+                        Send("GET");
+                    }catch(Exception e)
+                    {
+                        Log("server closed connection");
+                        break;
+                    }
+                    //receive servers time
+                    string received = Receive();
+                    double Tserv = Double.Parse(received.Replace(',', '.'));
+
+                    //remember time Tcli = T2[ms]
+                    double T2 = DateTime.Now.TimeOfDay.TotalMilliseconds;
+                    double Tcli = T2;
+
+                    double delta = Tserv + ((T2 - T1) / 2) - Tcli;
+
+                    //print Tcli + delta
+
+                    TimeSpan ts = TimeSpan.FromMilliseconds(Tcli + delta);
+                    Console.WriteLine();
+
+                    Log(" ... T1 = " + T1 + " ms");
+                    Log(" ... Tserv = " + Tserv + " ms");
+                    Log(" ... T2/Tcli = " + T2 + " ms");
+
+                    Console.WriteLine("server time (Tcli + delta) = " + ts.ToString(@"hh\:mm\:ss"));
+                    //print delta
+                    Console.WriteLine(String.Format("delta = {0:0.000}ms", delta));
+
+                    if (!loopFlag)
+                    {
+                        break;
+                    }
+                    Thread.Sleep(delay);
+                    //slep
+                }
+                Disconnect();
+            });
+            thread.Start();
+
+
+        }
+        public void Stop()
+        {
+
+        }
+
+        private void SetAddress(string address)
         {
             //todo: validate address
             this.serversAddress = address;
         }
-        public void SetPort(int port)
+
+
+        private void SetPort(int port)
         {
 
             if (port < System.Net.IPEndPoint.MinPort || port > System.Net.IPEndPoint.MaxPort)
@@ -40,13 +111,13 @@ namespace client
 
             this.serversPort = port;
         }
-        public void SetBufferSize(int size)
+        private void SetBufferSize(int size)
         {
             //todo: validate size
             this.bufferSize = size;
         }
 
-        public void Connect()
+        private void Connect()
         {
             socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
 
@@ -56,7 +127,7 @@ namespace client
             int i = 0;
             for (; i < ipAdd.AddressList.Length; i++)
             {
-                if (ipAdd.AddressList[i].AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)
+                if (ipAdd.AddressList[i].AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork && ipAdd.AddressList[i].ToString().Equals(serversAddress))
                 {
                     break;
                 }
@@ -64,12 +135,12 @@ namespace client
 
             System.Net.IPEndPoint remoteEP = new IPEndPoint(ipAdd.AddressList[i], serversPort);
 
-            if (verbose) Console.WriteLine(" client> establishing connection to {0}:{1}", ipAdd.AddressList[i].ToString(), serversPort);
+            if (verbose) Console.WriteLine(" client> establishing connection to {0}:{1}", serversAddress, serversPort);
             socket.Connect(remoteEP);
             if (verbose) Console.WriteLine(" client> connection established");
         }
 
-        public void Disconnect()
+        private void Disconnect()
         {
             socket.Close();
             if (verbose)
@@ -79,7 +150,7 @@ namespace client
 
         }
 
-        public int Send(string msg)
+        private int Send(string msg)
         {
             if (msg.Length <= 0)
             {
@@ -96,7 +167,7 @@ namespace client
             return bytesSent;
         }
 
-        public string Receive()
+        private string Receive()
         {
             byte[] buffer = new byte[1024];
 
@@ -117,6 +188,14 @@ namespace client
             }
 
             return recv;
+        }
+
+        public void Log(string text)
+        {
+            if (verbose)
+            {
+                Console.Out.WriteLine("TimeClient> " + text);
+            }
         }
 
 

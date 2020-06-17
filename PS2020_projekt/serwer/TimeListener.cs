@@ -12,64 +12,120 @@ namespace serwer
     class TimeListener
     {
         public bool verbose = true;
-        public int port = 69;
-        public int backlog = 10;
+        private string ip;
+        private int port;
+        private int backlog = 10;
 
-        private Socket listeningSocket = null;
-        private Socket connectionSocket = null;
+        private List<Socket> listeningSockets = null;
+
+
+
+        private List<Thread> listeningthreads = null;
+
+        private List<Socket> connectionSockets = null;
 
         private bool loopFlag;
+
+        private List<TimeServer> clientList = null;
+
+        //private IPEndPoint localep;
 
 
 
         public TimeListener()
         {
-            //randomize port
+            clientList = new List<TimeServer>();
+            listeningSockets = new List<Socket>();
+            connectionSockets = new List<Socket>();
         }
         public void Run()
         {
             StartServer();
             loopFlag = true;
-            Thread listener = new Thread(() =>
+
+            listeningthreads = new List<Thread>();
+
+            foreach(Socket s in listeningSockets)
             {
-                while (loopFlag)
+                Thread listener = new Thread(() =>
                 {
-                    WaitForClient();
-                }
-            });
-            listener.Start();
+                    while (loopFlag)
+                    {
+                        WaitForClient(s);
+                    }
+                });
+                listeningthreads.Add(listener);
+                listener.Start();
+            }
 
+           
+            
         }
 
-        public string GetAddress()
+        public List<string> GetAddresses ()
         {
-            return "";
-        }
+            List<string> addresses = new List<string>();
+            foreach (Socket s in listeningSockets)
+            {
+                addresses.Add(s.LocalEndPoint.ToString());
+            }
 
+            return addresses;
+        }
+        
+        public List<TimeServer> GetClients()
+        {
+            return clientList;
+        }
+        
         public void StartServer()
         {
             Log("starting server...");
-            listeningSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-            //bind
 
-            IPAddress hostIP = Dns.Resolve(IPAddress.Any.ToString()).AddressList[0];
-            IPEndPoint ep = new IPEndPoint(hostIP, 0);
-            listeningSocket.Bind(ep);
+            foreach (var i in System.Net.NetworkInformation.NetworkInterface.GetAllNetworkInterfaces())
+            {
+                if (i.OperationalStatus != System.Net.NetworkInformation.OperationalStatus.Up ||
+                    i.NetworkInterfaceType == System.Net.NetworkInformation.NetworkInterfaceType.Loopback) continue;
+                foreach (var ua in i.GetIPProperties().UnicastAddresses)
+                {
+                    if (ua.Address.AddressFamily.ToString().EndsWith("V6")) continue;
+                    Console.WriteLine(ua.Address + " - " + ua.Address.AddressFamily);
+                    
+                    Socket listeningSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+                    //bind
 
-            listeningSocket.Listen(backlog);
-            Log("server started, ip=" + hostIP.ToString() + ", port=" + ep.Port);
+                    IPAddress[] addresslist = Dns.Resolve(ua.Address.ToString()).AddressList;
+                    IPAddress hostIP = addresslist[0];
+                    IPEndPoint ep = new IPEndPoint(hostIP, 0);
+                    listeningSocket.Bind(ep);
+
+                    listeningSocket.Listen(backlog);
+                    //ip = listeningSocket.LocalEndPoint.ToString().Split(':')[0];
+                    //port = Int32.Parse(listeningSocket.LocalEndPoint.ToString().Split(':')[1]);
+                    //port = ep.Port;
+                    Log("server started, " + listeningSocket.LocalEndPoint.ToString());
+
+                    listeningSockets.Add(listeningSocket);
+
+                }
+            }
+
+            
         }
-        public void WaitForClient()
+        public void WaitForClient(Socket s)
         {
             Log("waiting for next client to connect ... ");
 
-            connectionSocket = listeningSocket.Accept();
+            Socket connectionSocket = s.Accept();
+            connectionSockets.Add(connectionSocket);
+
             Log("new client has connected, start TimerServer for him");
 
             // Or lambda expressions if you are using C# 3.0
-            //ClientThread clientThread = new ClientThread(this, connectionSocket);
-            //clientList.Add(clientThread);
-            //clientThread.Start();
+            TimeServer client = new TimeServer(connectionSocket);
+            clientList.Add(client);
+            client.Run();
+
         }
 
         public void CloseServer()
@@ -77,11 +133,12 @@ namespace serwer
             Log("closing server");
             try
             {
-                listeningSocket.Close();
-                //foreach (ClientThread ct in clientList)
-                //{
-                //    ct.Stop();
-                //}
+                foreach (Thread t in listeningthreads)
+                    t.Abort();
+
+                foreach (Socket s in listeningSockets)
+                    s.Close();
+                
             }
             catch (Exception ignored) { }
 
@@ -93,7 +150,7 @@ namespace serwer
         {
             if (verbose)
             {
-                Console.Out.WriteLine("EchoServer> " + text);
+                Console.Out.WriteLine("TimeListener> " + text);
             }
         }
     }

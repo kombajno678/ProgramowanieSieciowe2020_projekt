@@ -5,6 +5,10 @@ VisualStudioVersion = 15.0.28307.1062
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PS2020_projekt", "PS2020_projekt\PS2020_projekt.csproj", "{591B4C93-A827-4301-A933-FF5D0051C272}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "serwer", "serwer\serwer.csproj", "{1ABBFAC9-F9E9-4317-9EBB-3B78B87D9B84}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "client", "client\client.csproj", "{E9A6ABB3-0917-496F-B283-8A6405B72A45}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +19,14 @@ Global
 		{591B4C93-A827-4301-A933-FF5D0051C272}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{591B4C93-A827-4301-A933-FF5D0051C272}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{591B4C93-A827-4301-A933-FF5D0051C272}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1ABBFAC9-F9E9-4317-9EBB-3B78B87D9B84}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1ABBFAC9-F9E9-4317-9EBB-3B78B87D9B84}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1ABBFAC9-F9E9-4317-9EBB-3B78B87D9B84}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1ABBFAC9-F9E9-4317-9EBB-3B78B87D9B84}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E9A6ABB3-0917-496F-B283-8A6405B72A45}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E9A6ABB3-0917-496F-B283-8A6405B72A45}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E9A6ABB3-0917-496F-B283-8A6405B72A45}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E9A6ABB3-0917-496F-B283-8A6405B72A45}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

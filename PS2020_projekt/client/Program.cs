@@ -8,16 +8,45 @@ namespace client
 {
     class Program
     {
+        private static string multicastAddress = "239.0.0.222";
         static void Main(string[] args)
         {
-            // The code provided will print ‘Hello World’ to the console.
-            // Press Ctrl+F5 (or go to Debug > Start Without Debugging) to run your app.
-            Console.WriteLine("Hello World!");
+
+            //send discovery multicast udp
+            DiscoverySender ds = new DiscoverySender();
+            ds.Run();
+
+
+
+
+            bool offerChosen = false;
+            while (!offerChosen)
+            {
+                Console.WriteLine("p - print offers");
+                Console.WriteLine("[offer number] - choose offer");
+                string choice = Console.ReadLine();
+
+                if (choice.Equals("p"))
+                {
+                    //print offers
+                    List<string> offers = ds.GetOffers();
+                    for(int i = 0; i < offers.Count(); i++)
+                    {
+                        Console.WriteLine(String.Format("{0} - {1}\n", i, offers[i]));
+                    }
+                }
+            }
+
+           
+
             Console.ReadKey();
+            //get responds
+            //every 10 s print them
+            //let user chosoe server
+            //connect to server
 
 
 
-            // Go to http://aka.ms/dotnet-get-started-console to continue learning how to build a console app! 
-        }
     }
+}
 }

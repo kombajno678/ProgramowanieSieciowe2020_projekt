@@ -4,24 +4,46 @@ using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace serwer
 {
-    class Listener
+    class TimeListener
     {
         public bool verbose = true;
-        public int port = 7;
+        public int port = 69;
         public int backlog = 10;
 
         private Socket listeningSocket = null;
         private Socket connectionSocket = null;
 
+        private bool loopFlag;
 
 
-        public Listener()
+
+        public TimeListener()
         {
+            //randomize port
+        }
+        public void Run()
+        {
+            StartServer();
+            loopFlag = true;
+            Thread listener = new Thread(() =>
+            {
+                while (loopFlag)
+                {
+                    WaitForClient();
+                }
+            });
+            listener.Start();
 
+        }
+
+        public string GetAddress()
+        {
+            return "";
         }
 
         public void StartServer()
@@ -31,7 +53,7 @@ namespace serwer
             //bind
 
             IPAddress hostIP = Dns.Resolve(IPAddress.Any.ToString()).AddressList[0];
-            IPEndPoint ep = new IPEndPoint(hostIP, port);
+            IPEndPoint ep = new IPEndPoint(hostIP, 0);
             listeningSocket.Bind(ep);
 
             listeningSocket.Listen(backlog);
@@ -42,7 +64,7 @@ namespace serwer
             Log("waiting for next client to connect ... ");
 
             connectionSocket = listeningSocket.Accept();
-            Log("new client has connected, start ClientThread");
+            Log("new client has connected, start TimerServer for him");
 
             // Or lambda expressions if you are using C# 3.0
             //ClientThread clientThread = new ClientThread(this, connectionSocket);

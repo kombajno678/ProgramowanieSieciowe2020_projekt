@@ -18,6 +18,8 @@ namespace serwer
         
 
         private string offer;
+        private string offeredIp;
+        private int offeredPort;
 
         private bool loopFlag;
 
@@ -31,21 +33,32 @@ namespace serwer
 
         public DiscoveryListener(string ip, int port)
         {
-            this.offer = String.Format("OFFER {0} {1}", ip, port);
+            offeredIp = ip;
+            offeredPort = port;
+            offer = String.Format("OFFER {0} {1}", ip, port);
         }
         public DiscoveryListener(string address)
         {
-            this.offer = String.Format("OFFER {0} {1}", address.Split(':')[0], address.Split(':')[1]);
+            offeredIp = address.Split(':')[0];
+            offeredPort = Int32.Parse(address.Split(':')[1]);
+            offer = String.Format("OFFER {0} {1}", address.Split(':')[0], address.Split(':')[1]);
         }
         public void Run()
         {
             
             discoveryThread = new Thread(() => {
                 StartServer();
-                while (loopFlag)
+                try
                 {
-                    Loop();
+                    while (loopFlag)
+                    {
+                        Loop();
+                    }
+                }catch(Exception e)
+                {
+                    Log("Exception occured");
                 }
+                
                 CloseServer();
             });
 
@@ -67,7 +80,7 @@ namespace serwer
             localEp = new IPEndPoint(IPAddress.Any, Port);
             client.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
 
-            client.Client.Bind(localEp);
+            client.Client.Bind(localEp);//?
 
             IPAddress multicastaddress = IPAddress.Parse(MulticastAddress);
             try
@@ -88,7 +101,7 @@ namespace serwer
             string strData = Encoding.Unicode.GetString(data);
             if (strData.StartsWith("DISCOVERY"))
             {
-                Log("'" + strData + "', from: " + localEp.ToString());
+                //Log("'" + strData + "', from: " + localEp.ToString());
 
                 //sender:
                 IPAddress multicastaddress = IPAddress.Parse(MulticastAddress);
@@ -125,7 +138,7 @@ namespace serwer
         {
             if (verbose)
             {
-                Console.Out.WriteLine("discovery listener> " + text);
+                Console.Out.WriteLine(DateTime.Now.TimeOfDay.ToString() + " DiscoveryListener[" + offeredIp + ":" + offeredPort + "]> " + text);
             }
         }
         

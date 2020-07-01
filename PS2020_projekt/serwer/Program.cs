@@ -11,32 +11,21 @@ namespace serwer
     {
         static void Main(string[] args)
         {
-            // The code provided will print ‘Hello World’ to the console.
-            // Press Ctrl+F5 (or go to Debug > Start Without Debugging) to run your app.
-
-
 
             Console.WriteLine("starting TimeListeners  ...");
-            TimeListener ts = new TimeListener();
-            ts.Run();
+            TimeListener timeListener = new TimeListener();
+            timeListener.Run();
             
             Console.WriteLine("starting DiscoveryListeners  ...");
-            foreach(string address in ts.GetAddresses())
+            foreach(string address in timeListener.GetAddresses())
             {
                 DiscoveryListener ds = new DiscoveryListener(address);
                 ds.Run();
             }
             
-
-
             
-
-
-
             Console.ReadKey();
-
-            //ds.Stop();
-            // Go to http://aka.ms/dotnet-get-started-console to continue learning how to build a console app! 
+ 
         }
     }
 }

@@ -63,13 +63,13 @@ namespace serwer
             string strData = Receive();
             if(strData == null)
             {
-                //server closed connection
                 Log("client closed connection");
                 Stop();
             }
             //send system time
             TimeSpan time = DateTime.Now.TimeOfDay;
             Send(time.TotalMilliseconds.ToString());
+            Log("sent server's time");
         }
 
 
@@ -94,11 +94,12 @@ namespace serwer
             System.Text.Decoder d = System.Text.Encoding.UTF8.GetDecoder();
             int charLen = d.GetChars(buffer, 0, iRx, chars, 0);
             recv = new System.String(chars);
-
+            /*
             if (verbose)
             {
                 Log("message received : '" + recv + "', bytes: " + recv.Length);
             }
+            */
 
             return recv;
         }
@@ -114,7 +115,8 @@ namespace serwer
             bytesSent = socket.Send(byData);
             if (verbose)
             {
-                Log("message sent     : '" + msg + "', bytes: " + bytesSent);
+                //Log("message sent     : '" + msg + "', bytes: " + bytesSent);
+                //Log("sent time to " + socket.RemoteEndPoint.);
             }
             return bytesSent;
         }
@@ -123,7 +125,8 @@ namespace serwer
         {
             if (verbose)
             {
-                Console.Out.WriteLine("TimeServer> " + text);
+                Console.Out.WriteLine(DateTime.Now.TimeOfDay.ToString() + " TimeServer[client=" + socket.RemoteEndPoint.ToString() + "]> " + text);
+                
             }
         }
 

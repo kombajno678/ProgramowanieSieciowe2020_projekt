@@ -32,57 +32,99 @@ namespace client
             this.delay = delay;
         }
 
+        public bool IsRunning()
+        {
+            return thread.IsAlive;
+        }
+
+        public bool CheckConnection()
+        {
+            bool connected = false;
+
+            verbose = false;
+            try
+            {
+                Connect();
+                Disconnect();
+                connected = true;
+            }
+            catch(Exception e)
+            {
+                connected = false;
+            }
+            
+            verbose = true;
+
+            return connected;
+
+        }
+
         public void Run()
         {
+            
+
             loopFlag = true;
 
             thread = new Thread(()=>
             {
-                Connect();
-                while (loopFlag)
+                try
                 {
-                    //remember time T1[ms]
-                    double T1 = DateTime.Now.TimeOfDay.TotalMilliseconds;
 
-                    //ask server for its time
-                    try
+                    Connect();
+                    while (loopFlag)
                     {
-                        Send("GET");
-                    }catch(Exception e)
-                    {
-                        Log("server closed connection");
-                        break;
+                        //remember time T1[ms]
+                        double T1 = DateTime.Now.TimeOfDay.TotalMilliseconds;
+
+                        //ask server for its time
+                        try
+                        {
+                            Send("GET");
+                        }
+                        catch (Exception e)
+                        {
+                            Log("server closed connection");
+                            break;
+                        }
+                        //receive servers time
+                        string received = Receive();
+                        double Tserv = Double.Parse(received.Replace(',', '.'));
+
+                        //remember time Tcli = T2[ms]
+                        double T2 = DateTime.Now.TimeOfDay.TotalMilliseconds;
+                        double Tcli = T2;
+
+                        double delta = Tserv + ((T2 - T1) / 2) - Tcli;
+
+                        //print Tcli + delta
+
+                        TimeSpan ts = TimeSpan.FromMilliseconds(Tcli + delta);
+                        Console.WriteLine();
+
+                        Log(" ... T1 = " + T1 + " ms");
+                        Log(" ... Tserv = " + Tserv + " ms");
+                        Log(" ... T2/Tcli = " + T2 + " ms");
+
+                        Log("server time (Tcli + delta) = " + ts.ToString());
+                        //Log("server time (Tcli + delta) = " + ts.ToString(@"hh\:mm\:ss"));
+                        //print delta
+                        Log(String.Format("delta = {0:0.000}ms", delta));
+
+                        if (!loopFlag)
+                        {
+                            break;
+                        }
+                        Thread.Sleep(delay);
+                        //slep
                     }
-                    //receive servers time
-                    string received = Receive();
-                    double Tserv = Double.Parse(received.Replace(',', '.'));
-
-                    //remember time Tcli = T2[ms]
-                    double T2 = DateTime.Now.TimeOfDay.TotalMilliseconds;
-                    double Tcli = T2;
-
-                    double delta = Tserv + ((T2 - T1) / 2) - Tcli;
-
-                    //print Tcli + delta
-
-                    TimeSpan ts = TimeSpan.FromMilliseconds(Tcli + delta);
-                    Console.WriteLine();
-
-                    Log(" ... T1 = " + T1 + " ms");
-                    Log(" ... Tserv = " + Tserv + " ms");
-                    Log(" ... T2/Tcli = " + T2 + " ms");
-
-                    Console.WriteLine("server time (Tcli + delta) = " + ts.ToString(@"hh\:mm\:ss"));
-                    //print delta
-                    Console.WriteLine(String.Format("delta = {0:0.000}ms", delta));
-
-                    if (!loopFlag)
-                    {
-                        break;
-                    }
-                    Thread.Sleep(delay);
-                    //slep
+                }catch(ThreadInterruptedException e)
+                {
+                    //brr
+                }catch(ThreadAbortException e)
+                {
+                    //brr
                 }
+                
                 Disconnect();
             });
             thread.Start();
@@ -91,7 +133,11 @@ namespace client
         }
         public void Stop()
         {
+            loopFlag = false;
 
+            thread.Interrupt();
+
+            thread.Abort();
         }
 
         private void SetAddress(string address)
@@ -121,7 +167,8 @@ namespace client
         {
             socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
 
-            if (verbose) Console.WriteLine(" client> resolving ip address of: " + serversAddress);
+            //Log("resolving ip address of: " + serversAddress);
+            Log("establishing connection to " + serversAddress + ":" + serversPort);
             var ipAdd = Dns.GetHostEntry(serversAddress);
             //find ipv4 address
             int i = 0;
@@ -135,18 +182,19 @@ namespace client
 
             System.Net.IPEndPoint remoteEP = new IPEndPoint(ipAdd.AddressList[i], serversPort);
 
-            if (verbose) Console.WriteLine(" client> establishing connection to {0}:{1}", serversAddress, serversPort);
             socket.Connect(remoteEP);
-            if (verbose) Console.WriteLine(" client> connection established");
+            Log("connection established");
         }
 
         private void Disconnect()
         {
             socket.Close();
+            /*
             if (verbose)
             {
                 Console.Out.WriteLine(" client> disconnected from server");
             }
+            */
 
         }
 
@@ -160,10 +208,12 @@ namespace client
             int bytesSent = 0;
 
             bytesSent = socket.Send(byData);
+            /*
             if (verbose)
             {
-                Console.Out.WriteLine(" client> message sent     : '" + msg + "', bytes: " + bytesSent);
+                Log("message sent     : '" + msg + "', bytes: " + bytesSent);
             }
+            */
             return bytesSent;
         }
 
@@ -181,12 +231,12 @@ namespace client
             System.Text.Decoder d = System.Text.Encoding.UTF8.GetDecoder();
             int charLen = d.GetChars(buffer, 0, iRx, chars, 0);
             recv = new System.String(chars);
-
+            /*
             if (verbose)
             {
-                Console.Out.WriteLine(" client> message received : '" + recv + "', bytes: " + recv.Length);
+                Log(" client> message received : '" + recv + "', bytes: " + recv.Length);
             }
-
+            */
             return recv;
         }
 
@@ -194,9 +244,11 @@ namespace client
         {
             if (verbose)
             {
-                Console.Out.WriteLine("TimeClient> " + text);
+                Console.Out.WriteLine(DateTime.Now.TimeOfDay.ToString() + " TimeClient> " + text);
             }
         }
+
+        
 
 
     }

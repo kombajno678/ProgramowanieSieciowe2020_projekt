@@ -46,9 +46,20 @@ namespace client
             ListenSetup();
 
             threadListener = new Thread(()=> {
-                while (loopFlag)
+                try
                 {
-                    ListenLoop();
+                    while (loopFlag)
+                    {
+                        ListenLoop();
+                    }
+                }
+                catch (ThreadAbortException e)
+                {
+                    //brr
+                }
+                catch (ThreadInterruptedException e)
+                {
+                    //brr
                 }
             });
             threadSender = new Thread(() => {
@@ -82,11 +93,12 @@ namespace client
             //TODO
             loopFlag = false;
 
-            threadListener.Interrupt();
             threadSender.Interrupt();
-
-            threadListener.Abort();
             threadSender.Abort();
+            Thread.Sleep(1);
+            SendLoop(" ");//send msg so listener will close 
+            threadListener.Interrupt();
+            threadListener.Abort();
 
 
         }
@@ -109,12 +121,16 @@ namespace client
         {
             //send discovery
             string msg = "DISCOVERY";
+            SendLoop(msg);
 
+        }
+        private void SendLoop(string msg)
+        {
             Byte[] buffer = null;
             buffer = Encoding.Unicode.GetBytes(msg);
             udpclientSender.Send(buffer, buffer.Length, remoteepSender);
+            //Console.WriteLine("DiscoverySender> sent discovery request");
             //sleep for 10s
-
         }
         private void ListenSetup()
         {
@@ -142,6 +158,7 @@ namespace client
         {
             Byte[] data = clientListener.Receive(ref localEpListener);
             string strData = Encoding.Unicode.GetString(data);
+            //react only if message starts with "OFFER"
             if (strData.Split(' ')[0].Equals("OFFER"))
             {
                 //Console.WriteLine(" '" + strData + "', from: " + localEpListener.ToString());
